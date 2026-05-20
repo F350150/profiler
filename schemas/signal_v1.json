@@ -1,0 +1,5 @@
+{
+  "schema": "Signal",
+  "version": "v1.0",
+  "required": ["schema_version", "producer", "run_id", "timestamp", "id", "domain", "metric", "severity", "confidence"]
+}

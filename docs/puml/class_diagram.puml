@@ -1,0 +1,143 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+package "CLI" {
+  class MainCLI {
+    +run()
+    +ingest()
+    +normalize()
+    +diagnose()
+    +index()
+    +suggest()
+    +apply()
+    +plugin()
+  }
+}
+
+package "Core" {
+  class PipelineOrchestrator {
+    +add_stage(spec)
+    +execute(ctx, out_artifacts)
+  }
+
+  class Context {
+    +run_id
+    +inputs
+    +event_bus
+    +plugin_manager
+    +parser_plugin
+    +rulepack_plugin
+    +reporter_plugin
+    +transformer_plugin
+    +advisor_plugin
+  }
+
+  class EventBus {
+    +publish(type, stage, message)
+  }
+
+  class Artifact {
+    +stage_id
+    +meta
+    +data
+  }
+
+  class Metadata {
+    +schema_version
+    +producer
+    +run_id
+    +timestamp
+  }
+}
+
+package "Stages" {
+  interface Stage {
+    +name()
+    +input_schema()
+    +output_schema()
+    +run(deps, ctx)
+  }
+
+  class IngestStage
+  class NormalizeStage
+  class DiagnoseStage
+  class IndexStage
+  class RuleStage
+  class SuggestStage
+}
+
+package "Plugins" {
+  class PluginManager {
+    +load(path)
+    +validate(path)
+    +parser()
+    +rulepack()
+    +reporter()
+    +transformer()
+    +advisor()
+  }
+
+  interface IParserPlugin {
+    +parse(path)
+  }
+  interface IRulePackPlugin {
+    +match(semantics, graph)
+  }
+  interface IReporterPlugin {
+    +render_markdown(suggestions)
+    +render_json(suggestions)
+  }
+  interface ITransformerPlugin {
+    +build_patch(opportunities)
+  }
+  interface IAdvisorPlugin {
+    +enrich(suggestions)
+  }
+}
+
+package "Domain Types" {
+  class Signal
+  class BottleneckSemantic
+  class CodeFactGraph
+  class CodeOpportunity
+  class OptimizationSuggestion
+}
+
+MainCLI --> PipelineOrchestrator : 组装与触发
+MainCLI --> PluginManager : 加载插件
+MainCLI --> EventBus : 事件日志
+MainCLI --> Artifact : 读写中间产物
+
+PipelineOrchestrator --> Stage : 调度
+PipelineOrchestrator --> EventBus : 发布阶段事件
+PipelineOrchestrator --> Artifact : 落盘 artifacts/<run_id>
+PipelineOrchestrator --> Context
+
+Stage <|.. IngestStage
+Stage <|.. NormalizeStage
+Stage <|.. DiagnoseStage
+Stage <|.. IndexStage
+Stage <|.. RuleStage
+Stage <|.. SuggestStage
+
+Context --> PluginManager
+Context --> IParserPlugin
+Context --> IRulePackPlugin
+Context --> IReporterPlugin
+Context --> ITransformerPlugin
+Context --> IAdvisorPlugin
+
+NormalizeStage --> Signal
+DiagnoseStage --> BottleneckSemantic
+IndexStage --> CodeFactGraph
+RuleStage --> CodeOpportunity
+SuggestStage --> OptimizationSuggestion
+
+PluginManager --> IParserPlugin
+PluginManager --> IRulePackPlugin
+PluginManager --> IReporterPlugin
+PluginManager --> ITransformerPlugin
+PluginManager --> IAdvisorPlugin
+
+Artifact --> Metadata
+@enduml

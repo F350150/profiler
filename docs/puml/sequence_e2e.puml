@@ -1,0 +1,45 @@
+@startuml
+actor User
+participant "ksys" as Ksys
+participant "optix CLI" as CLI
+participant "PipelineOrchestrator" as Orchestrator
+participant "Ingest/Normalize/Diagnose/Index/Rule/Suggest" as Stages
+participant "PluginManager" as PM
+participant "AdvisorPlugin" as Advisor
+participant "Apply Command" as Apply
+participant "Source Code" as SRC
+participant "EventBus" as Bus
+
+User -> Ksys : stability-check/collect
+Ksys --> User : 生成 ksys 原始日志/结果
+
+User -> CLI : optix run --ksys ... --src ...
+CLI -> PM : 加载 parser/rulepack/reporter/transformer/advisor 插件
+CLI -> Orchestrator : execute(ctx)
+
+Orchestrator -> Bus : stage_start(ingest)
+Orchestrator -> Stages : ingest.run()
+Stages --> Orchestrator : RawMetricRecords
+Orchestrator -> Bus : stage_end(ingest)
+
+Orchestrator -> Stages : normalize.run()
+Stages --> Orchestrator : Signals
+Orchestrator -> Stages : diagnose.run()
+Stages --> Orchestrator : BottleneckSemantic
+Orchestrator -> Stages : index.run()
+Stages --> Orchestrator : CodeFactGraph
+Orchestrator -> Stages : rule.run()
+Stages --> Orchestrator : CodeOpportunity
+Orchestrator -> Stages : suggest.run()
+Stages -> Advisor : enrich(suggestions)
+Advisor --> Stages : 建议增强
+Stages --> Orchestrator : Suggestions + report + patch
+Orchestrator -> Bus : stage_end(suggest)
+
+CLI --> User : report.md/report.json/patch.diff/artifacts
+
+User -> Apply : optix apply --suggest ... --src-root ...
+Apply -> SRC : 备份文件
+Apply -> SRC : 注入 OPTIX_APPLIED 建议
+Apply --> User : apply_summary + 变更结果
+@enduml

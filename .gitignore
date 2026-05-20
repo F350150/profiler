@@ -1,0 +1,8 @@
+/build/
+*.dylib
+*.so
+*.a
+*.o
+*.obj
+*.jsonl
+/tmp/

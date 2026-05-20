@@ -1,0 +1,31 @@
+@startuml
+start
+
+:读取命令参数;
+if (命令类型?) then (run)
+  :加载插件(可选);
+  :初始化 Context/run_id/EventBus;
+  :执行 DAG 编排;
+
+  :Ingest 解析 ksys;
+  :Normalize 指标归一;
+  :Diagnose 语义归因;
+  :Index 静态代码索引;
+  :Rule 规则匹配与冲突消解;
+  :Suggest 生成报告与补丁;
+
+  :写出 artifacts/<run_id>;
+  :写出 report.md/report.json/patch.diff;
+elseif (apply)
+  :读取 suggest artifact;
+  :按文件聚合建议;
+  :创建备份;
+  :注入 OPTIX_APPLIED 注释;
+  :输出 apply_summary;
+else
+  :执行对应子命令;
+endif
+
+:记录 events.jsonl;
+stop
+@enduml

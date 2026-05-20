@@ -1,0 +1,28 @@
+core:
+  schema_version: v1.0
+  engine_api: v1
+pipeline:
+  stages:
+    - ingest
+    - normalize
+    - diagnose
+    - index
+    - rule
+    - suggest
+plugins:
+  parser: ""
+  rulepack: ""
+  reporter: ""
+  transformer: ""
+rules:
+  mode: conservative
+  file: rules/default_rules.yaml
+output:
+  artifact_dir: artifacts
+  report_md: report.md
+  report_json: report.json
+  patch: patch.diff
+safety:
+  high_risk_patch_enabled: false
+observability:
+  event_log: events.jsonl
